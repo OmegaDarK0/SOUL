@@ -1,4 +1,4 @@
-NAME      := soul
+NAME      := SOUL
 VERSION   := 0.1.0-alpha
 
 ifeq ($(OS),Windows_NT)
@@ -83,7 +83,7 @@ ifeq ($(TARGET_OS),windows)
     endif
 else ifeq ($(TARGET_OS),linux)
     BIN_EXT  :=
-    LDLIBS   := -lvoid -lSDL2 -lSDL2_image -lm -ldl -pthread
+    LDLIBS   := -lVOID -lSDL2 -lSDL2_image -lm -ldl -pthread
     OS_CFLAGS  := -fPIC
     OS_LDFLAGS := -pie -Wl,--enable-new-dtags -Wl,-rpath='$$ORIGIN'
 endif
@@ -139,7 +139,8 @@ SRCS_CPP := $(filter-out $(SRC_MAIN), $(shell find $(SRC_DIR) -type f -name "*.c
 OBJS_CORE := $(SRCS_C:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o) \
              $(SRCS_CPP:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-DEPS      := $(OBJS_CORE:%.o=%.d) $(OBJ_MAIN:%.o=%.d)
+DEPS      := $(OBJS_CORE:$(OBJ_DIR)/%.o=$(DEP_DIR)/%.d) \
+             $(OBJ_MAIN:$(OBJ_DIR)/%.o=$(DEP_DIR)/%.d)
 
 EXEC := $(TARGET_BIN)
 
@@ -214,7 +215,7 @@ re:
 
 info:
 	@echo "$(BLUE)==================================================$(NC)"
-	@echo "$(GREEN)          SOUL ENGINE - BUILD CONFIGURATION       $(NC)"
+	@echo "$(GREEN)                 BUILD CONFIGURATION             $(NC)"
 	@echo "$(BLUE)==================================================$(NC)"
 	@echo "$(YELLOW)[Project]$(NC)"
 	@echo "  Name     : $(NAME)"

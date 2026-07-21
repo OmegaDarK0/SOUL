@@ -2,12 +2,13 @@
 #define SOUL_MATH_HPP
 
 #include <cmath>
+#include "void.h"
 
 namespace soul {
     template <typename T>
     struct vec2 {
         union {
-            struct { T x, y; };
+            struct { T x = T(0), y = T(0); };
             struct { T u, v; };
             struct { T s, t; };
             T data[2];
@@ -50,11 +51,12 @@ namespace soul {
     using vec2d = vec2<double>;
     using vec2f = vec2<float>;
     using vec2i = vec2<int>;
-    using vec2u = vec2<unsigned int>;
+    using vec2u32 = vec2<uint32>;
+    using vec2u8 = vec2<uint8>;
     template <typename T>
     struct vec3 {
         union {
-            struct { T x, y, z; };
+            struct { T x = T(0), y = T(0), z = T(0); };
             struct { T r, g, b; };
             struct { T s, t, p; };
             T data[3];
@@ -105,11 +107,12 @@ namespace soul {
     using vec3d = vec3<double>;
     using vec3f = vec3<float>;
     using vec3i = vec3<int>;
-    using vec3u = vec3<unsigned int>;
+    using vec3u32 = vec3<uint32>;
+    using vec3u8 = vec3<uint8>;
     template <typename T>
     struct vec4 {
         union {
-            struct { T x, y, z, w; };
+            struct { T x = T(0), y = T(0), z = T(0), w = T(0); };
             struct { T r, g, b, a; };
             struct { T s, t, p, q; };
             T data[4];
@@ -158,7 +161,8 @@ namespace soul {
     using vec4d = vec4<double>;
     using vec4f = vec4<float>;
     using vec4i = vec4<int>;
-    using vec4u = vec4<unsigned int>;
+    using vec4u32 = vec4<uint32>;
+    using vec4u8 = vec4<uint8>;
     template <typename T>
     struct mat3 {
         union {

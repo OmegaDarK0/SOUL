@@ -37,16 +37,23 @@ typedef enum {
 } VoidLogLevel;
 
 typedef enum {
-    VOID_KEY_W,
-    VOID_KEY_A,
-    VOID_KEY_S,
-    VOID_KEY_D,
-    VOID_KEY_UP,
-    VOID_KEY_DOWN,
-    VOID_KEY_LEFT,
-    VOID_KEY_RIGHT,
-    VOID_KEY_SPACE,
-    VOID_KEY_ESCAPE
+    // --- ALPHABET ---
+    VOID_KEY_A, VOID_KEY_B, VOID_KEY_C, VOID_KEY_D, VOID_KEY_E, VOID_KEY_F,
+    VOID_KEY_G, VOID_KEY_H, VOID_KEY_I, VOID_KEY_J, VOID_KEY_K, VOID_KEY_L,
+    VOID_KEY_M, VOID_KEY_N, VOID_KEY_O, VOID_KEY_P, VOID_KEY_Q, VOID_KEY_R,
+    VOID_KEY_S, VOID_KEY_T, VOID_KEY_U, VOID_KEY_V, VOID_KEY_W, VOID_KEY_X,
+    VOID_KEY_Y, VOID_KEY_Z,
+    // --- ---
+    VOID_KEY_0, VOID_KEY_1, VOID_KEY_2, VOID_KEY_3, VOID_KEY_4,
+    VOID_KEY_5, VOID_KEY_6, VOID_KEY_7, VOID_KEY_8, VOID_KEY_9,
+    // ---  ---
+    VOID_KEY_UP, VOID_KEY_DOWN, VOID_KEY_LEFT, VOID_KEY_RIGHT,
+    // ---  ---
+    VOID_KEY_SPACE, VOID_KEY_ENTER, VOID_KEY_ESCAPE, VOID_KEY_TAB, VOID_KEY_BACKSPACE,
+    VOID_KEY_LSHIFT, VOID_KEY_RSHIFT, VOID_KEY_LCTRL, VOID_KEY_RCTRL, VOID_KEY_LALT, VOID_KEY_RALT,
+    // ---  ---
+    VOID_KEY_F1, VOID_KEY_F2, VOID_KEY_F3, VOID_KEY_F4, VOID_KEY_F5, VOID_KEY_F6,
+    VOID_KEY_F7, VOID_KEY_F8, VOID_KEY_F9, VOID_KEY_F10, VOID_KEY_F11, VOID_KEY_F12
 } VoidKeyCode;
 
 typedef void (*VoidThreadFunc)(void *data);
@@ -108,6 +115,7 @@ bool        void_window_should_close(const VoidWindow *window);
 void        void_window_poll_events(VoidWindow *window); // Polls OS messages
 VoidRender *void_window_get_render(const VoidWindow *window);
 void        void_window_get_size(const VoidWindow *window, int *width, int *height);
+void        void_window_set_logical_size(const VoidWindow *window, int width, int height);
 
 // Reads keyboard state instantly without callbacks/event listeners
 bool        void_input_is_key_pressed(VoidKeyCode key);
