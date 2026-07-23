@@ -8,6 +8,7 @@ namespace soul {
         static void process_player_movement(registry& world);
         static void process_global_controls(registry& world);
         static void update(registry& world);
+        static bool is_debug_enabled();
     };
 }
 

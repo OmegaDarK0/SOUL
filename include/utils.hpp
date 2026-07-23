@@ -5,20 +5,32 @@
 
 namespace soul::utils {
     struct config_view {
-        float width = 800.0f;
-        float height = 600.0f;
+        uint32 width = 800, height = 600;
         float ppu = 64.0f;
     };
+    struct bounds_view {
+        float width = 12.5f, height = 9.375f;
+    };
     inline config_view get_engine_config(registry& world) {
-        config_view cfg;
+        config_view config;
         for (const entity e : world.get_view<engine_config>()) {
             const auto&[width, height, ppu] = world.get_component<engine_config>(e);
-            cfg.width = static_cast<float>(width);
-            cfg.height = static_cast<float>(height);
-            cfg.ppu = ppu;
+            config.width = width;
+            config.height = height;
+            config.ppu = ppu;
             break;
         }
-        return cfg;
+        return config;
+    }
+    inline bounds_view get_world_bounds(registry& world) {
+        bounds_view bounds;
+        for (const entity e : world.get_view<world_bounds>()) {
+            const auto&[width, height] = world.get_component<world_bounds>(e);
+            bounds.width = width;
+            bounds.height = height;
+            break;
+        }
+        return bounds;
     }
     inline bool check_aabb(const transform& t1, const size& s1, const transform& t2, const size& s2,
                        float& out_overlap_x, float& out_overlap_y, float& out_dx, float& out_dy) {

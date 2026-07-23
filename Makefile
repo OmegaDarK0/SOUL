@@ -110,23 +110,23 @@ DEP_DIR   := $(BUILD_DIR)/dep
 TARGET_BIN := $(BIN_DIR)/$(BIN_NAME)
 TARGET_LIB := $(LIB_DIR)/$(LIB_NAME)
 
-COMMON_FLAGS := $(ARCH_FLAGS) -Wall -Wextra -I$(INC_DIR) -DVERSION=\"$(VERSION)\" $(OS_CFLAGS)
-LDFLAGS      := $(ARCH_FLAGS) -static-libgcc -static-libstdc++ -L$(LIB_DIR) $(OS_LDFLAGS)
-DEPFLAGS      = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.d
+CFLAGS  := $(ARCH_FLAGS) -Wall -Wextra -I$(INC_DIR) -DVERSION=\"$(VERSION)\" $(OS_CFLAGS)
+LDFLAGS := $(ARCH_FLAGS) -static-libgcc -static-libstdc++ -L$(LIB_DIR) $(OS_LDFLAGS)
+DEPFLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.d
 
-BUILD ?= release
+BUILD ?= debug
 ifeq ($(BUILD),debug)
-    COMMON_FLAGS += -Og -g -D_DEBUG
+    CFLAGS += -Og -g
 else
-    COMMON_FLAGS += -O2 -fstack-protector-strong -DNDEBUG
-    LDFLAGS      += -s
+    CFLAGS  += -O2 -fstack-protector-strong -DNDEBUG
+    LDFLAGS += -s
     ifeq ($(TARGET_OS),linux)
         LDFLAGS  += -Wl,-z,relro,-z,now
     endif
 endif
 
-CFLAGS       := $(COMMON_FLAGS) -std=c17
-CXXFLAGS     := $(COMMON_FLAGS) -std=c++20
+CCFLAGS  := $(CFLAGS) -std=c17
+CXXFLAGS := $(CFLAGS) -std=c++20
 
 SRC_MAIN := $(wildcard $(SRC_DIR)/main.c) $(wildcard $(SRC_DIR)/main.cpp)
 
@@ -180,7 +180,7 @@ $(TARGET_LIB): $(OBJS_CORE) | $(LIB_DIR)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR) $(DEP_DIR)
 	@echo "$(YELLOW)[CC] $<$(NC)"
-	@$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
+	@$(CC) $(CCFLAGS) $(DEPFLAGS) -c $< -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR) $(DEP_DIR)
 	@echo "$(YELLOW)[CXX] $<$(NC)"
@@ -239,7 +239,7 @@ info:
 	@echo "  Binary   : $(BIN_DIR)/"
 	@echo ""
 	@echo "$(YELLOW)[Flags]$(NC)"
-	@echo "  CFLAGS   : $(CFLAGS)"
+	@echo "  CCFLAGS  : $(CCFLAGS)"
 	@echo "  CXXFLAGS : $(CXXFLAGS)"
 	@echo "  LDFLAGS  : $(LDFLAGS)"
 	@echo "  LDLIBS   : $(LDLIBS)"
