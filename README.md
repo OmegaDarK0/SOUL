@@ -1,6 +1,6 @@
 # SOUL Engine (v0.1.0-alpha)
 
-*Read in other languages: [Français](README.md)*
+*Read in other languages: [Français](README.fr.md)*
 
 ## 1. Introduction and Engine Philosophy
 
