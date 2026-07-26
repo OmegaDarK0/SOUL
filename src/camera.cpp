@@ -5,7 +5,7 @@ namespace soul {
     void camera::update(registry& world) {
         vec3f target_pos;
         bool has_target = false;
-        for (const entity e : world.get_view<player_controller, transform>()) {
+        for (const entity e : world.get_view<controller::player, transform>()) {
             target_pos = world.get_component<transform>(e).position;
             has_target = true;
             break;

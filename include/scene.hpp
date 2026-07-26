@@ -9,11 +9,11 @@ namespace soul {
         entity e;
     };
     struct scene {
-        static constexpr float CELL_SIZE = 2.0f;
-        static constexpr uint32 GRID_WIDTH = 100;
-        static constexpr uint32 GRID_HEIGHT = 100;
-        static constexpr uint32 MAX_CELLS = GRID_WIDTH * GRID_HEIGHT;
-        static constexpr uint32 MAX_ENTITIES = 10000;
+        static uint32 grid_width;
+        static uint32 grid_height;
+        static float cell_size;
+        static uint32 max_cells;
+        static void init(uint32 max_entities, uint32 grid_w, uint32 grid_h, float cell_s);
         static void build_spatial_grid(registry& world);
         static void get_cell_entities(uint32 cell_x, uint32 cell_y, const spatial_entry*& out_entries, uint32& out_count);
         static void update(registry& world);

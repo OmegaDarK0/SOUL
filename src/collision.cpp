@@ -10,6 +10,13 @@ namespace soul {
         uint32 start_idx;
         uint32 end_idx;
     };
+    static entity* s_active_entities = nullptr;
+    static uint32 s_max_entities = 0;
+    void collision::init(const uint32 max_entities) {
+        s_max_entities = max_entities;
+        s_active_entities = static_cast<entity *>(void_arena_alloc(max_entities * sizeof(entity), alignof(entity)));
+        VOID_ASSERT(s_active_entities != nullptr);
+    }
     static void collision_worker_task(void* user_data) {
         const auto* data = static_cast<collision_job_data*>(user_data);
         registry& world = *data->world;
@@ -20,11 +27,11 @@ namespace soul {
             auto&[direction, speed] = world.get_component<velocity>(p_entity);
             const auto&[imass, bounciness, is_ghost] = world.get_component<body>(p_entity);
             if (is_ghost) continue;
-            const int cx = static_cast<int>((p_trans.position.x + scene::GRID_WIDTH * scene::CELL_SIZE / 2.0f) / scene::CELL_SIZE);
-            const int cy = static_cast<int>((p_trans.position.y + scene::GRID_HEIGHT * scene::CELL_SIZE / 2.0f) / scene::CELL_SIZE);
+            const int cx = static_cast<int>((p_trans.position.x + static_cast<float>(scene::grid_width) * scene::cell_size / 2.0f) / scene::cell_size);
+            const int cy = static_cast<int>((p_trans.position.y + static_cast<float>(scene::grid_height) * scene::cell_size / 2.0f) / scene::cell_size);
             for (int ny = cy - 1; ny <= cy + 1; ++ny) {
                 for (int nx = cx - 1; nx <= cx + 1; ++nx) {
-                    if (nx < 0 || ny < 0 || nx >= static_cast<int>(scene::GRID_WIDTH) || ny >= static_cast<int>(scene::GRID_HEIGHT)) continue;
+                    if (nx < 0 || ny < 0 || nx >= static_cast<int>(scene::grid_width) || ny >= static_cast<int>(scene::grid_height)) continue;
                     const spatial_entry* entries = nullptr;
                     uint32 count = 0;
                     scene::get_cell_entities(nx, ny, entries, count);
@@ -59,9 +66,9 @@ namespace soul {
         }
     }
     void collision::resolve_world_bounds(registry& world) {
-        const auto [width, height] = utils::get_world_bounds(world);
-        const float half_world_w = width / 2.0f;
-        const float half_world_h = height / 2.0f;
+        const auto [world_width, world_height] = world.get_context<config::physics>();
+        const float half_world_w = world_width / 2.0f;
+        const float half_world_h = world_height / 2.0f;
         const float world_min_x = -half_world_w;
         const float world_max_x = half_world_w;
         const float world_min_y = -half_world_h;
@@ -92,22 +99,21 @@ namespace soul {
         }
     }
     void collision::resolve_solids(registry& world) {
-        static entity s_active_entities[scene::MAX_ENTITIES];
         uint32 active_count = 0;
         for (const entity p_entity : world.get_view<transform, size, velocity, body>()) {
-            if (active_count < scene::MAX_ENTITIES) {
+            if (active_count < s_max_entities) {
                 s_active_entities[active_count++] = p_entity;
             }
         }
         if (active_count == 0) return;
         const uint32 num_jobs = void_system_get_core_count();
         const uint32 chunk_size = (active_count + num_jobs - 1) / num_jobs;
-        static collision_job_data s_jobs[16];
+        static collision_job_data s_jobs[64];
         uint32 jobs_dispatched = 0;
         for (uint32 i = 0; i < active_count; i += chunk_size) {
             uint32 end = i + chunk_size;
             if (end > active_count) end = active_count;
-            s_jobs[jobs_dispatched] = { &world, s_active_entities, i, end };
+            s_jobs[jobs_dispatched] = collision_job_data{&world, s_active_entities, i, end};
             job::dispatch(collision_worker_task, &s_jobs[jobs_dispatched]);
             jobs_dispatched++;
         }

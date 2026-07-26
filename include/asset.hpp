@@ -20,16 +20,16 @@ namespace soul {
         uint32 generation;
     };
     struct asset_manager {
-        static constexpr uint32 MAX_ASSETS = 1024;
-        void init();
-        void exit();
+        void init(uint32 max_assets);
+        void exit() const;
         asset load_texture(const VoidWindow* window, const char* name);
         void release_texture(asset handle);
         [[nodiscard]] bool is_valid(asset handle) const;
         [[nodiscard]] const VoidTexture* get_texture(asset handle) const;
     private:
-        texture_asset m_assets[MAX_ASSETS] = {};
-        uint32 m_free_indices[MAX_ASSETS] = {};
+        uint32 m_max_assets = 0;
+        texture_asset* m_assets = nullptr;
+        uint32* m_free_indices = nullptr;
         uint32 m_free_count = 0;
     };
 }

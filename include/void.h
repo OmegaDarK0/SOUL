@@ -4,10 +4,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include <stdalign.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
+
+#ifdef _WIN32
+    #ifdef VOID_BUILD_DLL
+        #define VOID_API __declspec(dllexport)
+    #else
+        #define VOID_API __declspec(dllimport)
+    #endif
+#else
+    #define VOID_API
+#endif
 
 #define KB 1024
 #define MB (1024 * KB)
@@ -61,22 +72,22 @@ typedef void (*VoidThreadFunc)(void *data);
 typedef struct VoidThread   VoidThread;
 typedef struct VoidLogEntry VoidLogEntry;
 
-typedef unsigned char       uint8;
-typedef unsigned short int  uint16;
-typedef unsigned int        uint32;
-typedef unsigned long int   uint64;
+typedef uint8_t  uint8;
+typedef uint16_t uint16;
+typedef uint32_t uint32;
+typedef uint64_t uint64;
 
 // ============================================================================
 // SYSTEM & TIME (core.c / time.c)
 // ============================================================================
 
-bool   void_init(void);
-void   void_exit(void);
+VOID_API bool   void_init(void);
+VOID_API void   void_exit(void);
 
-uint32 void_system_get_core_count(void); // Useful for initializing workers (job.cpp)
+VOID_API uint32 void_system_get_core_count(void); // Useful for initializing workers (job.cpp)
 
-uint64 void_time_get_ticks(void);        // High-resolution time in milliseconds
-float  void_time_get_delta(void);        // Delta time calculated by the Back-end
+VOID_API uint64 void_time_get_ticks(void);        // High-resolution time in milliseconds
+VOID_API float  void_time_get_delta(void);        // Delta time calculated by the Back-end
 
 // ============================================================================
 // MEMORY (memory.c)
@@ -84,19 +95,19 @@ float  void_time_get_delta(void);        // Delta time calculated by the Back-en
 // The Back-end allocates large blocks at startup via the OS.
 // The Front-end (C++) will request sub-blocks from these persistent arenas.
 
-void  void_memory_print(void);
+VOID_API void  void_memory_print(void);
 
-bool  void_memory_init(uint64 size);
-void  void_memory_exit(void);
+VOID_API bool  void_memory_init(uint64 size);
+VOID_API void  void_memory_exit(void);
 
 // Allocation from the global arena (persistent throughout the engine lifecycle)
-void *void_arena_alloc(uint64 size, uint32 alignment);
-void  void_arena_rollback(void);
+VOID_API void *void_arena_alloc(uint64 size, uint32 alignment);
+VOID_API void  void_arena_rollback(void);
 
 // Temporary arena (reset every frame by the Front-end, zero-cost allocation)
-void *void_frame_alloc(uint64 size, uint32 alignment);
-void  void_frame_rollback(void);
-void  void_frame_free(void);
+VOID_API void *void_frame_alloc(uint64 size, uint32 alignment);
+VOID_API void  void_frame_rollback(void);
+VOID_API void  void_frame_free(void);
 
 // ============================================================================
 // WINDOW & INPUT (window.c / input.c)
@@ -107,19 +118,19 @@ typedef struct VoidWindow  VoidWindow;
 typedef struct VoidRender  VoidRender;
 typedef struct VoidTexture VoidTexture;
 
-VoidWindow *void_window_create(const char *title, uint32 width, uint32 height);
-void        void_window_destroy(const VoidWindow *window);
-void        void_window_close(VoidWindow *window);
-bool        void_window_is_running(const VoidWindow *window);
-bool        void_window_should_close(const VoidWindow *window);
-void        void_window_poll_events(VoidWindow *window); // Polls OS messages
-VoidRender *void_window_get_render(const VoidWindow *window);
-void        void_window_get_size(const VoidWindow *window, int *width, int *height);
-void        void_window_set_logical_size(const VoidWindow *window, int width, int height);
+VOID_API VoidWindow *void_window_create(const char *title, uint32 width, uint32 height);
+VOID_API void        void_window_destroy(const VoidWindow *window);
+VOID_API void        void_window_close(VoidWindow *window);
+VOID_API bool        void_window_is_running(const VoidWindow *window);
+VOID_API bool        void_window_should_close(const VoidWindow *window);
+VOID_API void        void_window_poll_events(VoidWindow *window); // Polls OS messages
+VOID_API VoidRender *void_window_get_render(const VoidWindow *window);
+VOID_API void        void_window_get_size(const VoidWindow *window, int *width, int *height);
+VOID_API void        void_window_set_logical_size(const VoidWindow *window, int width, int height);
 
 // Reads keyboard state instantly without callbacks/event listeners
-bool        void_input_is_key_pressed(VoidKeyCode key);
-//bool      void_input_is_mouse_button_pressed(uint8 button);
+VOID_API bool        void_input_is_key_pressed(VoidKeyCode key);
+//VOID_API bool      void_input_is_mouse_button_pressed(uint8 button);
 
 // ============================================================================
 // BASIC 2D RENDERING (Provided by the SDL_Renderer back-end)
@@ -134,51 +145,51 @@ typedef struct {
 } VoidRect;
 
 // Clears the screen with a color (R, G, B, A)
-bool void_render_clear(const VoidWindow *window, uint8 r, uint8 g, uint8 b, uint8 a);
+VOID_API bool void_render_clear(const VoidWindow *window, uint8 r, uint8 g, uint8 b, uint8 a);
 
 // Presents the final image to the screen (Swap Buffers)
-void void_render_present(const VoidWindow *window);
+VOID_API void void_render_present(const VoidWindow *window);
 
 // Drawing primitives
-bool void_render_point(const VoidWindow *window, float x, float y, uint8 r, uint8 g, uint8 b, uint8 a);
-bool void_render_line(const VoidWindow *window, float x1, float y1, float x2, float y2, uint8 r, uint8 g, uint8 b, uint8 a);
-bool void_render_rect(const VoidWindow *window, float x, float y, float w, float h, uint8 r, uint8 g, uint8 b, uint8 a, bool fill);
+VOID_API bool void_render_point(const VoidWindow *window, float x, float y, uint8 r, uint8 g, uint8 b, uint8 a);
+VOID_API bool void_render_line(const VoidWindow *window, float x1, float y1, float x2, float y2, uint8 r, uint8 g, uint8 b, uint8 a);
+VOID_API bool void_render_rect(const VoidWindow *window, float x, float y, float w, float h, uint8 r, uint8 g, uint8 b, uint8 a, bool fill);
 
-bool void_render_points(const VoidWindow *window, const VoidPoint *points, int count, uint8 r, uint8 g, uint8 b, uint8 a);
-bool void_render_lines(const VoidWindow *window, const VoidPoint *points, int count, uint8 r, uint8 g, uint8 b, uint8 a);
-bool void_render_rects(const VoidWindow *window, const VoidRect *rects, int count, uint8 r, uint8 g, uint8 b, uint8 a, bool fill);
+VOID_API bool void_render_points(const VoidWindow *window, const VoidPoint *points, int count, uint8 r, uint8 g, uint8 b, uint8 a);
+VOID_API bool void_render_lines(const VoidWindow *window, const VoidPoint *points, int count, uint8 r, uint8 g, uint8 b, uint8 a);
+VOID_API bool void_render_rects(const VoidWindow *window, const VoidRect *rects, int count, uint8 r, uint8 g, uint8 b, uint8 a, bool fill);
 
 // Texture management
-VoidTexture *void_texture_load(const VoidWindow *window, const char *filename);
-void         void_texture_destroy(const VoidTexture *texture);
-bool         void_texture_draw(const VoidWindow *window, const VoidTexture *texture, int src_x, int src_y, int src_w, int src_h, float dst_x, float dst_y, float dst_w, float dst_h);
+VOID_API VoidTexture *void_texture_load(const VoidWindow *window, const char *filename);
+VOID_API void         void_texture_destroy(const VoidTexture *texture);
+VOID_API bool         void_texture_draw(const VoidWindow *window, const VoidTexture *texture, int src_x, int src_y, int src_w, int src_h, float dst_x, float dst_y, float dst_w, float dst_h);
 
 // Texture getters (Cached internally)
-int void_texture_get_width(const VoidTexture *texture);
-int void_texture_get_height(const VoidTexture *texture);
+VOID_API int void_texture_get_width(const VoidTexture *texture);
+VOID_API int void_texture_get_height(const VoidTexture *texture);
 
 // ============================================================================
 // LOW-LEVEL THREADING (thread.c)
 // ============================================================================
 // Provides just enough primitives for job.cpp (C++) to build its Fibers
 
-void   void_thread_create(VoidThreadFunc func, void *data);
-void   void_thread_sleep(uint32 ms);
-uint32 void_thread_get_id(void);
+VOID_API void   void_thread_create(VoidThreadFunc func, void *data);
+VOID_API void   void_thread_sleep(uint32 ms);
+VOID_API uint32 void_thread_get_id(void);
 
 // Atomic primitives to avoid blocking mutexes
-uint32 void_atomic_increment(volatile uint32 *value);
-uint32 void_atomic_decrement(volatile uint32 *value);
-bool   void_atomic_compare_exchange(volatile uint32 *value, uint32 expected, uint32 desired);
+VOID_API uint32 void_atomic_increment(volatile uint32 *value);
+VOID_API uint32 void_atomic_decrement(volatile uint32 *value);
+VOID_API bool   void_atomic_compare_exchange(volatile uint32 *value, uint32 expected, uint32 desired);
 
 // ============================================================================
 // LOGGING SYSTEM (log.c)
 // ============================================================================
 
-void void_log_init(void);
-void void_log_push(VoidLogLevel level, const char *file, int line, const char *fmt, ...);
-void void_log_flush(void);
-void void_log_exit(void);
+VOID_API void void_log_init(void);
+VOID_API void void_log_push(VoidLogLevel level, const char *file, int line, const char *fmt, ...);
+VOID_API void void_log_flush(void);
+VOID_API void void_log_exit(void);
 
 // Helper macros to automatically inject file and line numbers
 #define VOID_LOG_INFO(...)  void_log_push(VOID_LOG_INFO, __FILE__, __LINE__, __VA_ARGS__)

@@ -5,6 +5,7 @@
 
 namespace soul {
     struct collision {
+        static void init(uint32 max_entities);
         static void resolve_world_bounds(registry& world);
         static void resolve_solids(registry& world);
         static void update(registry& world);

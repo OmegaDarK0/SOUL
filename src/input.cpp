@@ -16,7 +16,7 @@ namespace soul {
         }
     };
     void input::process_player_movement(registry& world) {
-        for (const entity e : world.get_view<player_controller, velocity>()) {
+        for (const entity e : world.get_view<controller::player, velocity>()) {
             auto&[direction, speed] = world.get_component<velocity>(e);
             direction = {{{0.0f, 0.0f, 0.0f}}};
             if (void_input_is_key_pressed(VOID_KEY_W)) direction.y -= 1.0f;
