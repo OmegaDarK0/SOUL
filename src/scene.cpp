@@ -1,6 +1,7 @@
 #include <algorithm>
 #include "scene.hpp"
 #include "components.hpp"
+#include "memory.hpp"
 
 namespace soul {
     uint32 scene::grid_width = 0;
@@ -18,9 +19,9 @@ namespace soul {
         grid_height = grid_h;
         cell_size = cell_s;
         max_cells = grid_width * grid_height;
-        s_entries = static_cast<spatial_entry *>(void_arena_alloc(max_entities * sizeof(spatial_entry), alignof(spatial_entry)));
-        s_cell_starts = static_cast<uint32 *>(void_arena_alloc(max_cells * sizeof(uint32), alignof(uint32)));
-        s_cell_counts = static_cast<uint32 *>(void_arena_alloc(max_cells * sizeof(uint32), alignof(uint32)));
+        s_entries = arena_make_array<spatial_entry>(max_entities);
+        s_cell_starts = arena_make_array<uint32>(max_cells);
+        s_cell_counts = arena_make_array<uint32>(max_cells);
         VOID_ASSERT(s_entries != nullptr && s_cell_starts != nullptr && s_cell_counts != nullptr);
     }
     void scene::build_spatial_grid(registry& world) {

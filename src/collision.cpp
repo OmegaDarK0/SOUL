@@ -1,6 +1,7 @@
 #include "collision.hpp"
 #include "scene.hpp"
 #include "job.hpp"
+#include "memory.hpp"
 #include "utils.hpp"
 
 namespace soul {
@@ -14,7 +15,7 @@ namespace soul {
     static uint32 s_max_entities = 0;
     void collision::init(const uint32 max_entities) {
         s_max_entities = max_entities;
-        s_active_entities = static_cast<entity *>(void_arena_alloc(max_entities * sizeof(entity), alignof(entity)));
+        s_active_entities = arena_make_array<entity>(max_entities);
         VOID_ASSERT(s_active_entities != nullptr);
     }
     static void collision_worker_task(void* user_data) {

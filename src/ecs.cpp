@@ -1,4 +1,5 @@
 #include "ecs.hpp"
+#include "memory.hpp"
 
 namespace soul {
     namespace internal {
@@ -17,8 +18,8 @@ namespace soul {
     }
     void entity_manager::init(const entity max_entities) {
         m_max_entities = max_entities;
-        m_signatures = static_cast<signature*>(void_arena_alloc(max_entities * sizeof(signature), alignof(signature)));
-        m_available_entities = static_cast<entity*>(void_arena_alloc(max_entities * sizeof(entity), alignof(entity)));
+        m_signatures = arena_make_array<signature>(max_entities);
+        m_available_entities = arena_make_array<entity>(max_entities);
         m_available_count = max_entities;
         for (entity i = 0; i < max_entities; ++i) {
             m_signatures[i] = 0;

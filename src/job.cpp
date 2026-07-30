@@ -1,6 +1,6 @@
 #include <array>
 #include "job.hpp"
-#include "void.h"
+#include "memory.hpp"
 
 namespace soul {
     struct job_decl {
@@ -33,7 +33,7 @@ namespace soul {
     }
     void job::init(const uint32 max_jobs) {
         s_max_jobs = max_jobs;
-        s_job_queue = static_cast<job_decl *>(void_arena_alloc(max_jobs * sizeof(job_decl), alignof(job_decl)));
+        s_job_queue = arena_make_array<job_decl>(max_jobs);
         VOID_ASSERT(s_job_queue != nullptr);
         uint32 cores = void_system_get_core_count();
         if (cores < 2) cores = 2;

@@ -1,10 +1,11 @@
 #include "asset.hpp"
+#include "memory.hpp"
 
 namespace soul {
     void asset_manager::init(const uint32 max_assets) {
         m_max_assets = max_assets;
-        m_assets = static_cast<texture_asset *>(void_arena_alloc(max_assets * sizeof(texture_asset), alignof(texture_asset)));
-        m_free_indices = static_cast<uint32 *>(void_arena_alloc(max_assets * sizeof(uint32), alignof(uint32)));
+        m_assets = arena_make_array<texture_asset>(max_assets);
+        m_free_indices = arena_make_array<uint32>(max_assets);
         VOID_ASSERT(m_assets != nullptr && m_free_indices != nullptr);
         for (uint32 i = 1; i < m_max_assets; ++i) {
             m_free_indices[m_max_assets - 1 - i] = i;

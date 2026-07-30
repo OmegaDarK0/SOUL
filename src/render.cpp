@@ -2,6 +2,7 @@
 #include "render.hpp"
 #include "scene.hpp"
 #include "input.hpp"
+#include "memory.hpp"
 #include "utils.hpp"
 
 namespace soul {
@@ -14,7 +15,7 @@ namespace soul {
     static uint32 s_max_render_commands = 0;
     void render::init(const uint32 max_commands) {
         s_max_render_commands = max_commands;
-        s_render_queue = static_cast<render_command *>(void_arena_alloc(max_commands * sizeof(render_command), alignof(render_command)));
+        s_render_queue = arena_make_array<render_command>(max_commands);
         VOID_ASSERT(s_render_queue != nullptr);
     }
     void render::draw_entities(registry& world, const VoidWindow* window, const asset_manager& assets,

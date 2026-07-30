@@ -1,6 +1,15 @@
 ifeq ($(OS),Windows_NT)
-    HOST_OS   := windows
-    HOST_ARCH := $(PROCESSOR_ARCHITECTURE)
+    HOST_OS := windows
+
+    ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
+        HOST_ARCH := x86_64
+    else ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
+        HOST_ARCH := x86_64
+    else ifeq ($(PROCESSOR_ARCHITECTURE),x86)
+        HOST_ARCH := x86
+    else ifeq ($(PROCESSOR_ARCHITEW6432),x86)
+        HOST_ARCH := x86
+    endif
 
     RED    :=
     GREEN  :=
@@ -12,24 +21,18 @@ else
     RAW_ARCH := $(shell uname -m 2>/dev/null || echo Unknown)
 
     ifeq ($(RAW_OS),Darwin)
-        $(error "Darwin is not yet implemented.")
+        $(error "Darwin host is not yet implemented.")
     else ifeq ($(RAW_OS),Linux)
         HOST_OS := linux
     else
         $(error "Unsupported OS: $(RAW_OS)")
     endif
 
-    ifeq ($(RAW_ARCH),aarch64)
-        $(error "arm64 is not yet implemented.")
-    else ifeq ($(RAW_ARCH),arm64)
-        $(error "arm64 is not yet implemented.")
-    else ifeq ($(RAW_ARCH),amd64)
+    ifneq (,$(filter aarch64 arm64,$(RAW_ARCH)))
+        $(error "arm64 host architecture is not yet implemented.")
+    else ifneq (,$(filter %64,$(RAW_ARCH)))
         HOST_ARCH := x86_64
-    else ifeq ($(RAW_ARCH),x86_64)
-        HOST_ARCH := x86_64
-    else ifeq ($(RAW_ARCH),x86)
-        HOST_ARCH := x86
-    else ifneq (,$(filter i%86,$(RAW_ARCH)))
+    else ifneq (,$(filter %86,$(RAW_ARCH)))
         HOST_ARCH := x86
     else
         $(error "Unsupported Architecture: $(RAW_ARCH)")
@@ -42,11 +45,35 @@ else
     NC     := \033[0m
 endif
 
-OS   ?= $(HOST_OS)
-ARCH ?= x86_64
+INPUT_OS   := $(strip $(OS))
+INPUT_ARCH := $(strip $(ARCH))
 
-TARGET_OS   := $(OS)
-TARGET_ARCH := $(ARCH)
+ifeq ($(INPUT_OS),)
+    INPUT_OS := $(HOST_OS)
+endif
+ifeq ($(INPUT_ARCH),)
+    INPUT_ARCH := $(HOST_ARCH)
+endif
+
+ifneq (,$(filter win win32 windows Windows_NT,$(INPUT_OS)))
+    TARGET_OS := windows
+else ifneq (,$(filter linux Linux,$(INPUT_OS)))
+    TARGET_OS := linux
+else ifneq (,$(filter mac macos darwin Darwin,$(INPUT_OS)))
+    $(error "Darwin target is not yet implemented.")
+else
+    TARGET_OS := $(INPUT_OS)
+endif
+
+ifneq (,$(filter x64 amd64 x86_64,$(INPUT_ARCH)))
+    TARGET_ARCH := x86_64
+else ifneq (,$(filter x32 x86 i386 i686,$(INPUT_ARCH)))
+    TARGET_ARCH := x86
+else ifneq (,$(filter arm arm64 aarch64,$(INPUT_ARCH)))
+    $(error "arm64 target is not yet implemented.")
+else
+    TARGET_ARCH := $(INPUT_ARCH)
+endif
 
 CC       := gcc
 CXX      := g++
@@ -71,7 +98,7 @@ ifeq ($(TARGET_OS),windows)
                 CXX := x86_64-w64-mingw32-g++
                 AR  := x86_64-w64-mingw32-ar
             endif
-        else
+        else ifeq ($(TARGET_ARCH),x86)
             CC  := i686-w64-mingw32-gcc
             CXX := i686-w64-mingw32-g++
             AR  := i686-w64-mingw32-ar
@@ -104,17 +131,20 @@ DEP_DIR   := $(BUILD_DIR)/dep
 TARGET_BIN := $(BIN_DIR)/$(BIN_NAME)
 TARGET_LIB := $(LIB_DIR)/$(LIB_NAME)
 
-CFLAGS  := $(ARCH_FLAGS) -Wall -Wextra -I$(INC_DIR) -DVERSION=\"$(VERSION)\" $(CFLAGS)
+CFLAGS  := $(ARCH_FLAGS) -Wall -Wextra -Wformat=2 -Werror=format-security -I$(INC_DIR) -DVERSION=\"$(VERSION)\" $(CFLAGS)
 LDFLAGS := $(ARCH_FLAGS) -static-libgcc -static-libstdc++ -L$(LIB_DIR) $(LDFLAGS)
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.d
 
 ifeq ($(TARGET_OS),windows)
     CFLAGS  += -D__USE_MINGW_ANSI_STDIO=1
+    LDFLAGS += -Wl,--dynamicbase -Wl,--nxcompat
     LDLIBS  += -lmingw32 -mwindows
+    OSFLAG  :=
 else ifeq ($(TARGET_OS),linux)
     CFLAGS  += -fPIC
-    LDFLAGS += -Wl,--enable-new-dtags -Wl,-rpath='$$ORIGIN'
+    LDFLAGS += -Wl,--enable-new-dtags -Wl,-rpath='$$ORIGIN:$$ORIGIN/../lib'
     LDLIBS  += -lm -ldl -pthread
+    OSFLAG  := -pie
 endif
 
 LDLIBS += -lSDL2 -lSDL2_image
@@ -123,7 +153,7 @@ BUILD ?= debug
 ifeq ($(BUILD),debug)
     CFLAGS  += -Og -g
 else
-    CFLAGS  += -O2 -fstack-protector-strong -DNDEBUG
+    CFLAGS  += -O2 -fstack-protector-strong -fstack-clash-protection -fcf-protection -D_FORTIFY_SOURCE=2 -DNDEBUG
     LDFLAGS += -s
     ifeq ($(TARGET_OS),linux)
         LDFLAGS += -Wl,-z,relro,-z,now
@@ -165,7 +195,11 @@ define POST_BUILD_STEP
     fi
 endef
 
-.PHONY: all lib clean fclean distclean re run debug info
+DIST_DIR := dist/$(NAME)-$(VERSION)-$(TARGET_OS)-$(TARGET_ARCH)
+
+.PHONY: all lib run debug clean fclean distclean re release info
+
+.DELETE_ON_ERROR:
 
 all: $(TARGET_BIN)
 
@@ -176,7 +210,7 @@ $(OBJ_DIR) $(DEP_DIR) $(BIN_DIR) $(LIB_DIR):
 
 $(TARGET_BIN): $(OBJ_MAIN) $(TARGET_LIB) | $(BIN_DIR)
 	@echo "$(BLUE)[LD] Linking: $@$(NC)"
-	@$(CXX) $(OBJ_MAIN) $(TARGET_LIB) -pie $(LDFLAGS) $(LDLIBS) -o $@
+	@$(CXX) $(OBJ_MAIN) $(OSFLAG) $(LDFLAGS) -l$(NAME) $(LDLIBS) -o $@
 	$(POST_BUILD_STEP)
 
 $(TARGET_LIB): $(OBJS_CORE) | $(LIB_DIR)
@@ -203,20 +237,48 @@ debug:
 
 clean:
 	@rm -rf $(BUILD_DIR)
-	@echo "$(RED)[CLEAN] Build directory removed.$(NC)"
+	@echo "$(RED)[CLEAN] Build objects removed.$(NC)"
 
 fclean: clean
 	@rm -rf $(TARGET_BIN) $(TARGET_LIB)
-	@echo "$(RED)[FCLEAN] Binary removed.$(NC)"
+	@echo "$(RED)[FCLEAN] Binaries and libraries removed.$(NC)"
 
 distclean:
 	@rm -rf build bin
 	@rm -f lib/*/$(LIB_NAME)
-	@echo "$(RED)[DISTCLEAN] All builds and binaries removed.$(NC)"
+	@echo "$(RED)[DISTCLEAN] Entire build environment wiped.$(NC)"
 
 re:
 	@$(MAKE) --no-print-directory fclean
 	@$(MAKE) --no-print-directory all
+
+release:
+	@echo "$(YELLOW)[RELEASE] Starting Universal Release build...$(NC)"
+	@$(MAKE) --no-print-directory fclean
+	@$(MAKE) --no-print-directory all BUILD=release
+	@echo "$(BLUE)[RELEASE] Creating directory structure...$(NC)"
+	@mkdir -p $(DIST_DIR)/bin $(DIST_DIR)/lib $(DIST_DIR)/$(INC_DIR)
+	@echo "$(BLUE)[RELEASE] Exporting public headers...$(NC)"
+	@$(eval EXPORT_HDRS := $(if $(PUBLIC_HEADERS),$(PUBLIC_HEADERS),$(INC_DIR)/*))
+	@cp -r $(EXPORT_HDRS) $(DIST_DIR)/$(INC_DIR)/ 2>/dev/null || true
+ifeq ($(TARGET_OS),windows)
+	@echo "$(BLUE)[RELEASE] Exporting Windows binaries...$(NC)"
+	@cp -P $(BIN_DIR)/* $(DIST_DIR)/bin/ 2>/dev/null || true
+	@cp -P $(LIB_DIR)/$(LIB_NAME) $(DIST_DIR)/lib/ 2>/dev/null || true
+else ifeq ($(TARGET_OS),linux)
+	@echo "$(BLUE)[RELEASE] Exporting Linux binaries...$(NC)"
+	@cp -P $(BIN_DIR)/$(BIN_NAME) $(DIST_DIR)/bin/ 2>/dev/null || true
+	@cp -P $(LIB_DIR)/*.so* $(DIST_DIR)/lib/ 2>/dev/null || true
+endif
+	@echo "$(BLUE)[RELEASE] Attaching assets and documentation...$(NC)"
+	@if [ -d "assets" ]; then cp -r assets $(DIST_DIR)/; fi
+	@cp *.md $(DIST_DIR)/ 2>/dev/null || true
+	@echo "$(BLUE)[RELEASE] Compressing to ZIP archive...$(NC)"
+	@cd dist && zip -rq $(notdir $(DIST_DIR)).zip $(notdir $(DIST_DIR)) 2>/dev/null || echo "$(YELLOW)[WARNING] 'zip' failed.$(NC)"
+	@echo "$(GREEN)==================================================$(NC)"
+	@echo "$(GREEN)[SUCCESS] Release packaged in: $(DIST_DIR)$(NC)"
+	@echo "$(GREEN)[SUCCESS] Archive created:     dist/$(notdir $(DIST_DIR)).zip$(NC)"
+	@echo "$(GREEN)==================================================$(NC)"
 
 info:
 	@echo "$(BLUE)==================================================$(NC)"
